@@ -1,0 +1,7 @@
+flask
+azure-ai-formrecognizer
+dotenv
+azure-storage-blob
+aiohttp
+openai
+twilio
