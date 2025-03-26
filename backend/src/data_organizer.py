@@ -26,6 +26,8 @@ from backend.src.dataIntegrityChecks.phonenumber import getFalseNumbers
 from backend.src.dataIntegrityChecks.address import extractAddress
 from backend.src.dataIntegrityChecks.address import replaceCorrectAddress
 
+from backend.src.notify import notify_status
+
 class DocumentOrganizer:
     def __init__(self, openai_endpoint, openai_key, api_version="2024-02-01-preview", api_type="azure"):
         self.openai_endpoint = openai_endpoint
@@ -39,6 +41,9 @@ class DocumentOrganizer:
 
         # Process the text
         start_time = time.time()
+
+        notify_status("Dots connected, organizing it especially for you...")
+
         """
         Reads extracted text, processes it using Azure OpenAI Foundry, and saves JSON output.
         """
@@ -46,6 +51,8 @@ class DocumentOrganizer:
             extracted_text = f.read()
 
         fileName = organised_output_file_path.split('.')[0]
+
+        notify_status("Utilizing my AI brain...")
 
         # ✅ Using the exact same prompt from your original code
         prompt = f"""
@@ -57,7 +64,8 @@ class DocumentOrganizer:
             (
             "Follow this structure precisely:"
             "\n"
-            "  \"File Name\": \"{fileName}\",\n"
+            "  \"filename\": \"{fileName}\",\n"
+            "  \"id\": \"{fileName}\",\n"
             "  \"Financing Company Name\": \"\",\n"
             "  \"Financing Company Address\": \"\",\n"
             "  \"Financing Company 1 Person to Contact\": \"\",\n"
@@ -141,6 +149,8 @@ class DocumentOrganizer:
         # Save the response to the text file
         with open(organised_output_file_path, "w") as file:
            file.write(structured_data)
+           
+        notify_status("Almost done, just a few more checks...")
 
         print(f"Organized data saved to {organised_output_file_path}")
 
@@ -150,6 +160,7 @@ class DocumentOrganizer:
         flatJson.flatten_json(organised_output_file_path)
 
 
+        notify_status("Looks good......., calibrating the data for you...")
 
         ############# Save the organized to Container First ################
         # Initialize Azure Blob Service Client
@@ -161,6 +172,8 @@ class DocumentOrganizer:
         with open(organised_output_file_path, "rb") as data:
             organized_blob_client.upload_blob(data, overwrite=True)
 
+
+        notify_status("Running data integrity checks...")
 
         # Run data integrity checks asynchronously
         await asyncio.gather(
@@ -174,16 +187,20 @@ class DocumentOrganizer:
         elapsed_time = end_time - start_time
         print("Time taken in seconds:", elapsed_time)
 
+        notify_status("Wrapping things up.....")
+
         return organised_output_file_path
 
 async def validate_email(organised_output_file_path):
     try:
+        notify_status("Checking emails....")
         verification_results_file = await extractEmailProcessor.extract_emails_from_json_file(organised_output_file_path)
         replaceWrongEmails.replace_emails_in_blob(organised_output_file_path, verification_results_file)
     except Exception as e:
         print(f"Error during email validation: {e}")
 
 async def validate_dob(organised_output_file_path):
+    notify_status("Checking DOBs....")
     try:
         wrongFormattedDOBSet = extractDOBProcessor.extract_dob_from_file(organised_output_file_path)
         replaceWrongDOBs.replace_dob_in_blob(organised_output_file_path, wrongFormattedDOBSet)
@@ -191,6 +208,7 @@ async def validate_dob(organised_output_file_path):
         print(f"Error during DOB validation: {e}")
 
 async def validate_phone(organised_output_file_path):
+    notify_status("Checking Phone Numbers....")
     try:
         # Offload extraction to a thread
         phoneNumbersFromJS = await asyncio.to_thread(
@@ -216,6 +234,7 @@ async def validate_phone(organised_output_file_path):
 
 
 async def validate_address(organised_output_file_path):
+    notify_status("Checking Addresses....")
     try:
         corrected_address_dict = extractAddress.process_addresses_from_blob(organised_output_file_path)
         replaceCorrectAddress.replaceWithCorrectAddress(organised_output_file_path, corrected_address_dict)

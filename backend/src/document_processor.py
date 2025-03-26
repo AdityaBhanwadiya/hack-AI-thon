@@ -1,5 +1,6 @@
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
+from backend.src.notify import notify_status
 
 class DocumentProcessor:
     def __init__(self, endpoint, api_key):
@@ -12,6 +13,8 @@ class DocumentProcessor:
         """
         Extracts text from a document using Azure Document Intelligence.
         """
+        notify_status(f"Trying to connect dots ...")
+
         with open(file_path, "rb") as file:
             poller = self.document_client.begin_analyze_document("prebuilt-read", file) 
             result = poller.result()
