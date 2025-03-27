@@ -32,45 +32,37 @@ app = func.FunctionApp()
 def IncomingBlobStorage(myblob: func.InputStream):
     logging.info(f"Blob trigger fired for blob: {myblob.name}")
 
-import io
-
-@app.blob_trigger(arg_name="myblob", path="newblobstorage/{name}",
-                  connection="newincomingblobstorage_STORAGE") 
-def IncomingBlobStorage(myblob: func.InputStream):
-    logging.info(f"Blob trigger fired for blob: {myblob.name}")
-
     try:
-        # Generate a new name for the file
-        original_filename = myblob.name
-        filename_only = f"renamed_{uuid.uuid4()}_{original_filename}"
-        logging.info(f"Renaming uploaded file to: {filename_only}")
+        original_filename = os.path.basename(myblob.name)
+        filename_only = f"uploaded{uuid.uuid4()}{original_filename}"
+        raw_file_path = os.path.join("/tmp", filename_only)
 
-        # Read the blob content into an in-memory buffer
-        file_buffer = io.BytesIO(myblob.read())
-        logging.info(f"Loaded file into memory: {filename_only}")
-
-        # Notify status
+        with open(raw_file_path, "wb") as f:
+            f.write(myblob.read())
+        logging.info(f"Saved raw file to: {raw_file_path}")
         notify_status(f"Brainstorming things for {filename_only}...")
 
         # Extract text from the document using DocumentProcessor
-        extracted_text = doc_processor.extract_text_from_document(file_buffer)
+        extracted_text = doc_processor.extract_text_from_document(raw_file_path)
         if not extracted_text:
-            logging.error(f"Failed to extract text from {filename_only}")
+            logging.error(f"Failed to extract text from {raw_file_path}")
             return
 
-        # Create a unique name for the extracted text file
+        # Create a unique name for the extracted text file and upload it
         extracted_blob_filename = f"extracted_{uuid.uuid4()}.txt"
 
-        # Upload the extracted text directly to Azure Blob Storage
         extracted_blob_client = blob_service_client.get_blob_client(
             container=Config.AZURE_CONTAINER_NAME_FOR_EXTRACTED_TEXT_FILE,
             blob=extracted_blob_filename
         )
         extracted_blob_client.upload_blob(extracted_text)
-        logging.info(f"Uploaded extracted text file as: {extracted_blob_filename}")
+        logging.info(f"Uploaded extracted text as blob: {extracted_blob_filename}")
+
+        # Process and organize the document based on the extracted text file
+        asyncio.run(process_and_organize_document(extracted_blob_filename))
 
     except Exception as e:
-        logging.error(f"Error in IncomingBlobStorage: {str(e)}")
+        logging.error(f"Error in IncomingBlobTrigger: {str(e)}")
 
 
 async def process_and_organize_document(extracted_blob_filename):
