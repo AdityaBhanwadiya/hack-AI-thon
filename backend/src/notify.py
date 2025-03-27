@@ -3,7 +3,7 @@ import requests
 def notify_status(message):
     headers = {"Content-Type": "application/json"}
     response = requests.post(
-        url="https://azure-hackathon-fa.azurewebsites.net/api/send_message",
+        url="https://hackaithon-fa-premium.azurewebsites.net/api/send_message",
         json={"message": message},
         headers=headers
     )
