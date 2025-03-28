@@ -2,7 +2,6 @@ import os
 import uuid
 import asyncio
 import logging
-import io
 import azure.functions as func
 from azure.storage.blob import BlobServiceClient
 from backend.src.config import Config
@@ -34,27 +33,19 @@ def IncomingBlobStorage(myblob: func.InputStream):
     logging.info(f"Blob trigger fired for blob: {myblob.name}")
 
     try:
-        original_filename = os.path.basename(myblob.name)
-        filename_only = f"uploaded{uuid.uuid4()}{original_filename}"
+        original_file_name = os.path.basename(myblob.name)
+        filename_only = f"renamed_{uuid.uuid4()}_{original_file_name}"
+        raw_file_path = os.path.join("/tmp", filename_only)
 
-        file_content = myblob.read()
+        with open(raw_file_path, "wb") as f:
+            f.write(myblob.read())
+        logging.info(f"Saved raw file to: {raw_file_path}")
+        notify_status(f"Reading your docuement...")
 
-        processed_blob_client = blob_service_client.get_blob_client(
-            container=Config.AZURE_CONTAINER_NAME_FOR_PROCESSED_FILES,
-            blob=filename_only
-        )
-        processed_blob_client.upload_blob(file_content, overwrite=True)
-        logging.info(f"Uploaded file to processed files container: {filename_only}")
-
-        notify_status(f"Brainstorming things for {filename_only}...")
-
-        downloaded_blob = processed_blob_client.download_blob().readall()
-        logging.info(f"Fetched file from processed files container: {filename_only}")
-
-        # Process the file content using DocumentProcessor
-        extracted_text = doc_processor.extract_text_from_document(io.BytesIO(downloaded_blob))
+        # Extract text from the document using DocumentProcessor
+        extracted_text = doc_processor.extract_text_from_document(raw_file_path)
         if not extracted_text:
-            logging.error(f"Failed to extract text from {filename_only}")
+            logging.error(f"Failed to extract text from {raw_file_path}")
             return
 
         # Create a unique name for the extracted text file and upload it

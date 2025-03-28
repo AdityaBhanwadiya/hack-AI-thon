@@ -62,7 +62,3 @@ def convert_values_to_string(obj):
         return [convert_values_to_string(elem) for elem in obj]
     else:
         return str(obj)
-
-
-# Example usage
-# clean_json_file("organized_outputs/organized_data_f8e200ae-3324-473f-910c-09a71a25ec70.json")

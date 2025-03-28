@@ -1,10 +1,7 @@
 import json
 import re
 from uuid import uuid4
-import os
 import backend.src.dataIntegrityChecks.dateofbirth.checkDOB as checkDOB
-from azure.storage.blob import BlobServiceClient
-from backend.src.config import Config
 
 def extract_dob_from_file(file_path):
     dob_data = {}

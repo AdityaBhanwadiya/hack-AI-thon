@@ -42,7 +42,7 @@ class DocumentOrganizer:
         # Process the text
         start_time = time.time()
 
-        notify_status("Dots connected, organizing it especially for you...")
+        notify_status("Starting the processing...")
 
         """
         Reads extracted text, processes it using Azure OpenAI Foundry, and saves JSON output.
@@ -52,7 +52,7 @@ class DocumentOrganizer:
 
         fileName = organised_output_file_path.split('.')[0]
 
-        notify_status("Utilizing my AI brain...")
+        notify_status("Organizing the data...")
 
         # ✅ Using the exact same prompt from your original code
         prompt = f"""
@@ -150,7 +150,7 @@ class DocumentOrganizer:
         with open(organised_output_file_path, "w") as file:
            file.write(structured_data)
            
-        notify_status("Almost done, just a few more checks...")
+        notify_status("Cleaning the Data...")
 
         print(f"Organized data saved to {organised_output_file_path}")
 
@@ -160,7 +160,7 @@ class DocumentOrganizer:
         flatJson.flatten_json(organised_output_file_path)
 
 
-        notify_status("Looks good......., calibrating the data for you...")
+        notify_status("Sending further for validation...")
 
         ############# Save the organized to Container First ################
         # Initialize Azure Blob Service Client

@@ -13,7 +13,7 @@ class DocumentProcessor:
         """
         Extracts text from a document using Azure Document Intelligence.
         """
-        notify_status(f"Trying to connect dots ...")
+        notify_status(f"Extracting Text...")
 
         with open(file_path, "rb") as file:
             poller = self.document_client.begin_analyze_document("prebuilt-read", file) 
